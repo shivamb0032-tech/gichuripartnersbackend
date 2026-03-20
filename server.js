@@ -25,6 +25,7 @@ app.use(cookieParser());
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
 app.use("/api/contact", require("./routes/contactRoutes"));
+app.use("/uploads", express.static("public/uploads"));
 
 app.get("/", (req, res) => {
   res.send("API running...");
