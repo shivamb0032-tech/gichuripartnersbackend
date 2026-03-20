@@ -1,4 +1,6 @@
 const Blog = require("../models/Blog");
+const cloudinary = require("../config/cloudinary");
+const streamifier = require("streamifier");
 
 const generateSlug = (title) => {
   return title
@@ -7,6 +9,23 @@ const generateSlug = (title) => {
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
+};
+
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "blogs",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+
+    streamifier.createReadStream(fileBuffer).pipe(stream);
+  });
 };
 
 const createBlog = async (req, res) => {
@@ -30,7 +49,12 @@ const createBlog = async (req, res) => {
       slug = `${slug}-${Date.now()}`;
     }
 
-    const image = req.file ? `/uploads/blogs/${req.file.filename}` : "";
+    let image = "";
+
+    if (req.file) {
+      const uploadedImage = await uploadToCloudinary(req.file.buffer);
+      image = uploadedImage.secure_url;
+    }
 
     const blog = await Blog.create({
       title,
@@ -134,8 +158,10 @@ const updateBlog = async (req, res) => {
     }
 
     let updatedImage = blog.image;
+
     if (req.file) {
-      updatedImage = `/uploads/blogs/${req.file.filename}`;
+      const uploadedImage = await uploadToCloudinary(req.file.buffer);
+      updatedImage = uploadedImage.secure_url;
     }
 
     blog.title = title || blog.title;
