@@ -37,11 +37,13 @@ const registerAdmin = async (req, res) => {
       });
     }
 
-    const name = `${firstName} ${lastName}`.trim();
-    const username = email.split("@")[0];
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPhone = phone.trim();
+    const name = `${firstName.trim()} ${lastName.trim()}`.trim();
+    const username = trimmedEmail.split("@")[0];
 
     const existingAdmin = await Admin.findOne({
-      $or: [{ email }, { username }],
+      $or: [{ email: trimmedEmail }, { username }],
     });
 
     if (existingAdmin) {
@@ -55,13 +57,13 @@ const registerAdmin = async (req, res) => {
 
     const admin = await Admin.create({
       name,
-      email,
+      email: trimmedEmail,
       username,
-      phone,
+      phone: trimmedPhone,
       password: hashedPassword,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Admin registered successfully",
       admin: {
@@ -74,9 +76,10 @@ const registerAdmin = async (req, res) => {
     });
   } catch (error) {
     console.log("Register error full:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Server error during registration",
+      error: error.message,
     });
   }
 };
@@ -88,7 +91,7 @@ const loginAdmin = async (req, res) => {
     console.log("JWT_SECRET in login:", process.env.JWT_SECRET);
 
     const { identifier, email, password } = req.body;
-    const loginValue = identifier || email;
+    const loginValue = (identifier || email || "").trim().toLowerCase();
 
     if (!loginValue || !password) {
       return res.status(400).json({
@@ -102,7 +105,7 @@ const loginAdmin = async (req, res) => {
     });
 
     if (!admin) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         message: "Admin not found",
       });
@@ -119,6 +122,13 @@ const loginAdmin = async (req, res) => {
       });
     }
 
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: "JWT_SECRET is missing in environment variables",
+      });
+    }
+
     const token = jwt.sign(
       {
         id: admin._id,
@@ -128,7 +138,7 @@ const loginAdmin = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Login successful",
       token,
@@ -142,9 +152,10 @@ const loginAdmin = async (req, res) => {
     });
   } catch (error) {
     console.log("Login error full:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Server error during login",
+      error: error.message,
     });
   }
 };
