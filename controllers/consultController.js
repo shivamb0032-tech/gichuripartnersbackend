@@ -1,8 +1,6 @@
 const ConsultForm = require("../models/ConsultForm");
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 const generateFormEmailTemplate = require("../utils/emailTemplate");
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const submitConsultForm = async (req, res) => {
   try {
@@ -22,10 +20,12 @@ const submitConsultForm = async (req, res) => {
       services,
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Consult form submitted successfully",
-      data: savedConsult,
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
     });
 
     const html = generateFormEmailTemplate({
@@ -34,29 +34,26 @@ const submitConsultForm = async (req, res) => {
       email,
       phone,
       services,
-      brandName: "Gichuri Partners",
+      brandName: "Gichuri Partners", 
       logoUrl:
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    resend.emails
-      .send({
-        from: "Gichuri Partners <onboarding@resend.dev>",
-        to: [process.env.EMAIL_USER],
-        replyTo: email,
-        subject: `New Consult Inquiry | ${name}`,
-        html,
-      })
-      .then((data) => {
-        console.log("Consult email sent:", data);
-      })
-      .catch((err) => {
-        console.error("Consult email error:", err);
-      });
+    await transporter.sendMail({
+      from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      subject: `New Consult Inquiry | ${name}`,
+      html,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Consult form submitted successfully",
+      data: savedConsult,
+    });
   } catch (error) {
     console.error("Consult Form Error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || "Something went wrong",
     });
@@ -67,15 +64,13 @@ const getAllConsultForms = async (req, res) => {
   try {
     const consults = await ConsultForm.find().sort({ createdAt: -1 });
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       count: consults.length,
       consults,
     });
   } catch (error) {
-    console.error("Get consult error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch consult forms",
     });
@@ -95,14 +90,12 @@ const deleteConsultForm = async (req, res) => {
 
     await consult.deleteOne();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Consult form deleted successfully",
     });
   } catch (error) {
-    console.error("Delete consult error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || "Failed to delete consult form",
     });

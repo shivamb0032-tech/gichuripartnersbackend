@@ -1,8 +1,6 @@
 const Contact = require("../models/Contact");
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 const generateFormEmailTemplate = require("../utils/emailTemplate");
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const submitContactForm = async (req, res) => {
   try {
@@ -15,7 +13,6 @@ const submitContactForm = async (req, res) => {
       });
     }
 
-    // ✅ DB save
     const savedMessage = await Contact.create({
       name,
       email,
@@ -24,14 +21,14 @@ const submitContactForm = async (req, res) => {
       companyName,
     });
 
-    // ✅ frontend ko turant response
-    res.status(201).json({
-      success: true,
-      message: "Form submitted successfully",
-      data: savedMessage,
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
     });
 
-    // ✅ email template
     const html = generateFormEmailTemplate({
       formType: "Contact Form Submission",
       name,
@@ -44,26 +41,20 @@ const submitContactForm = async (req, res) => {
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    // ✅ email send (background me)
-    resend.emails
-      .send({
-        from: "Gichuri Partners <onboarding@resend.dev>", // testing sender
-        to: [process.env.EMAIL_USER], // tujhko mail
-        replyTo: email, // user ko reply kar sake
-        subject: `New Contact Form Message | ${name}`,
-        html,
-      })
-      .then((data) => {
-        console.log("Contact email sent:", data);
-      })
-      .catch((err) => {
-        console.error("Contact email error:", err);
-      });
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER,
+      subject: "New Contact Form Message",
+      html,
+    });
 
+    res.status(201).json({
+      success: true,
+      message: "Form submitted successfully",
+      data: savedMessage,
+    });
   } catch (error) {
-    console.error("Contact form error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || "Something went wrong",
     });
@@ -74,15 +65,13 @@ const getAllContactForms = async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       count: contacts.length,
       contacts,
     });
   } catch (error) {
-    console.error("Get contacts error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch contacts",
     });
@@ -102,14 +91,12 @@ const deleteContactForm = async (req, res) => {
 
     await contact.deleteOne();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Contact form deleted successfully",
     });
   } catch (error) {
-    console.error("Delete contact error:", error);
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message || "Failed to delete contact form",
     });

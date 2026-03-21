@@ -1,6 +1,3 @@
-const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first");
-
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -11,19 +8,15 @@ dotenv.config();
 
 const app = express();
 
-
-const corsOptions = {
-  origin: [
-    "http://localhost:3000",
-    "https://gichuripartners-ten.vercel.app",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-
-
+app.use(
+  cors({ 
+    origin: [
+      "http://localhost:3000",
+      "https://gichuripartners-ten.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,7 +25,11 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
+
+// Contact form
 app.use("/api/contact", require("./routes/contactRoutes"));
+
+//  Consult form (NEW ADD)
 app.use("/api/consult", require("./routes/consultRoutes"));
 
 app.use("/uploads", express.static("public/uploads"));
