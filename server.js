@@ -22,9 +22,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
+
+// Contact form
 app.use("/api/contact", require("./routes/contactRoutes"));
+
+//  Consult form (NEW ADD)
+app.use("/api/consult", require("./routes/consultRoutes"));
+
 app.use("/uploads", express.static("public/uploads"));
 
 app.get("/", (req, res) => {

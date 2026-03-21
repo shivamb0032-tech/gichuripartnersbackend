@@ -1,24 +1,23 @@
-const Contact = require("../models/Contact");
+const ConsultForm = require("../models/ConsultForm");
 const nodemailer = require("nodemailer");
 const generateFormEmailTemplate = require("../utils/emailTemplate");
 
-const submitContactForm = async (req, res) => {
+const submitConsultForm = async (req, res) => {
   try {
-    const { name, email, phone, services, companyName } = req.body;
+    const { name, email, phone, services } = req.body;
 
-    if (!name || !email || !phone || !services || !companyName) {
+    if (!name || !email || !phone || !services) {
       return res.status(400).json({
         success: false,
-        message: "Name, email, phone, services and company name are required",
+        message: "Name, email, phone and services are required",
       });
     }
 
-    const savedMessage = await Contact.create({
+    const savedConsult = await ConsultForm.create({
       name,
       email,
       phone,
       services,
-      companyName,
     });
 
     const transporter = nodemailer.createTransport({
@@ -30,30 +29,30 @@ const submitContactForm = async (req, res) => {
     });
 
     const html = generateFormEmailTemplate({
-      formType: "Contact Form Submission",
+      formType: "Consult Form Submission",
       name,
       email,
       phone,
       services,
-      companyName,
-      brandName: "Gichuri Partners",
+      brandName: "Gichuri Partners", // ✅ sirf brand ke liye
       logoUrl:
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
-      subject: "New Contact Form Message",
+      subject: `New Consult Inquiry | ${name}`,
       html,
     });
 
     res.status(201).json({
       success: true,
-      message: "Form submitted successfully",
-      data: savedMessage,
+      message: "Consult form submitted successfully",
+      data: savedConsult,
     });
   } catch (error) {
+    console.error("Consult Form Error:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Something went wrong",
@@ -61,50 +60,50 @@ const submitContactForm = async (req, res) => {
   }
 };
 
-const getAllContactForms = async (req, res) => {
+const getAllConsultForms = async (req, res) => {
   try {
-    const contacts = await Contact.find().sort({ createdAt: -1 });
+    const consults = await ConsultForm.find().sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      count: contacts.length,
-      contacts,
+      count: consults.length,
+      consults,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch contacts",
+      message: error.message || "Failed to fetch consult forms",
     });
   }
 };
 
-const deleteContactForm = async (req, res) => {
+const deleteConsultForm = async (req, res) => {
   try {
-    const contact = await Contact.findById(req.params.id);
+    const consult = await ConsultForm.findById(req.params.id);
 
-    if (!contact) {
+    if (!consult) {
       return res.status(404).json({
         success: false,
-        message: "Contact form not found",
+        message: "Consult form not found",
       });
     }
 
-    await contact.deleteOne();
+    await consult.deleteOne();
 
     res.status(200).json({
       success: true,
-      message: "Contact form deleted successfully",
+      message: "Consult form deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to delete contact form",
+      message: error.message || "Failed to delete consult form",
     });
   }
 };
 
 module.exports = {
-  submitContactForm,
-  getAllContactForms,
-  deleteContactForm,
+  submitConsultForm,
+  getAllConsultForms,
+  deleteConsultForm,
 };
