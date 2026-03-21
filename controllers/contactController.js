@@ -21,14 +21,6 @@ const submitContactForm = async (req, res) => {
       companyName,
     });
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
     const html = generateFormEmailTemplate({
       formType: "Contact Form Submission",
       name,
@@ -41,20 +33,40 @@ const submitContactForm = async (req, res) => {
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
-      subject: "New Contact Form Message",
-      html,
-    });
+    try {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
 
-    res.status(201).json({
+      await transporter.sendMail({
+        from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER,
+        replyTo: email,
+        subject: "New Contact Form Message",
+        html,
+      });
+    } catch (mailError) {
+      console.error("Mail send error:", mailError);
+    }
+
+    return res.status(201).json({
       success: true,
       message: "Form submitted successfully",
       data: savedMessage,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Contact form error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Something went wrong",
     });
@@ -65,13 +77,15 @@ const getAllContactForms = async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: contacts.length,
       contacts,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get contacts error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch contacts",
     });
@@ -91,12 +105,14 @@ const deleteContactForm = async (req, res) => {
 
     await contact.deleteOne();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Contact form deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Delete contact error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to delete contact form",
     });
