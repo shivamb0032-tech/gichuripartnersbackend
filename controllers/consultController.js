@@ -20,40 +20,52 @@ const submitConsultForm = async (req, res) => {
       services,
     });
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
     const html = generateFormEmailTemplate({
       formType: "Consult Form Submission",
       name,
       email,
       phone,
       services,
-      brandName: "Gichuri Partners", // ✅ sirf brand ke liye
+      brandName: "Gichuri Partners",
       logoUrl:
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    await transporter.sendMail({
-      from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: `New Consult Inquiry | ${name}`,
-      html,
-    });
+    // ✅ MAIL TRY-CATCH (IMPORTANT)
+    try {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
 
-    res.status(201).json({
+      await transporter.sendMail({
+        from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER,
+        replyTo: email,
+        subject: `New Consult Inquiry | ${name}`,
+        html,
+      });
+    } catch (mailError) {
+      console.error("Consult Mail Error:", mailError);
+    }
+
+    return res.status(201).json({
       success: true,
       message: "Consult form submitted successfully",
       data: savedConsult,
     });
   } catch (error) {
     console.error("Consult Form Error:", error);
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Something went wrong",
     });
@@ -64,13 +76,15 @@ const getAllConsultForms = async (req, res) => {
   try {
     const consults = await ConsultForm.find().sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: consults.length,
       consults,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get consult error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch consult forms",
     });
@@ -90,12 +104,14 @@ const deleteConsultForm = async (req, res) => {
 
     await consult.deleteOne();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Consult form deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Delete consult error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to delete consult form",
     });
