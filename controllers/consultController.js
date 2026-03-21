@@ -1,6 +1,8 @@
 const ConsultForm = require("../models/ConsultForm");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const generateFormEmailTemplate = require("../utils/emailTemplate");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const submitConsultForm = async (req, res) => {
   try {
@@ -20,6 +22,12 @@ const submitConsultForm = async (req, res) => {
       services,
     });
 
+    res.status(201).json({
+      success: true,
+      message: "Consult form submitted successfully",
+      data: savedConsult,
+    });
+
     const html = generateFormEmailTemplate({
       formType: "Consult Form Submission",
       name,
@@ -31,37 +39,20 @@ const submitConsultForm = async (req, res) => {
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    // ✅ MAIL TRY-CATCH (IMPORTANT)
-    try {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
-
-      await transporter.sendMail({
-        from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_USER,
+    resend.emails
+      .send({
+        from: "Gichuri Partners <onboarding@resend.dev>",
+        to: [process.env.EMAIL_USER],
         replyTo: email,
         subject: `New Consult Inquiry | ${name}`,
         html,
+      })
+      .then((data) => {
+        console.log("Consult email sent:", data);
+      })
+      .catch((err) => {
+        console.error("Consult email error:", err);
       });
-    } catch (mailError) {
-      console.error("Consult Mail Error:", mailError);
-    }
-
-    return res.status(201).json({
-      success: true,
-      message: "Consult form submitted successfully",
-      data: savedConsult,
-    });
   } catch (error) {
     console.error("Consult Form Error:", error);
 

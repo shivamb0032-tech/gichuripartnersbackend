@@ -1,6 +1,8 @@
 const Contact = require("../models/Contact");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const generateFormEmailTemplate = require("../utils/emailTemplate");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const submitContactForm = async (req, res) => {
   try {
@@ -13,6 +15,7 @@ const submitContactForm = async (req, res) => {
       });
     }
 
+    // ✅ DB save
     const savedMessage = await Contact.create({
       name,
       email,
@@ -21,6 +24,14 @@ const submitContactForm = async (req, res) => {
       companyName,
     });
 
+    // ✅ frontend ko turant response
+    res.status(201).json({
+      success: true,
+      message: "Form submitted successfully",
+      data: savedMessage,
+    });
+
+    // ✅ email template
     const html = generateFormEmailTemplate({
       formType: "Contact Form Submission",
       name,
@@ -33,36 +44,22 @@ const submitContactForm = async (req, res) => {
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    try {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
-
-      await transporter.sendMail({
-        from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_USER,
-        replyTo: email,
-        subject: "New Contact Form Message",
+    // ✅ email send (background me)
+    resend.emails
+      .send({
+        from: "Gichuri Partners <onboarding@resend.dev>", // testing sender
+        to: [process.env.EMAIL_USER], // tujhko mail
+        replyTo: email, // user ko reply kar sake
+        subject: `New Contact Form Message | ${name}`,
         html,
+      })
+      .then((data) => {
+        console.log("Contact email sent:", data);
+      })
+      .catch((err) => {
+        console.error("Contact email error:", err);
       });
-    } catch (mailError) {
-      console.error("Mail send error:", mailError);
-    }
 
-    return res.status(201).json({
-      success: true,
-      message: "Form submitted successfully",
-      data: savedMessage,
-    });
   } catch (error) {
     console.error("Contact form error:", error);
 
