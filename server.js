@@ -17,14 +17,26 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
+<<<<<<< HEAD
         return callback(null, true);
       }
       return callback(new Error("Not allowed by CORS"));
+=======
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+>>>>>>> 085d29f (nodemailer)
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
+<<<<<<< HEAD
+=======
+
+app.options("*", cors());
+>>>>>>> 085d29f (nodemailer)
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -35,7 +47,10 @@ console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
 console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
 console.log("🛢️ MONGO_URI exists:", !!process.env.MONGO_URI);
 
+<<<<<<< HEAD
 // ✅ Routes
+=======
+>>>>>>> 085d29f (nodemailer)
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
 
@@ -64,7 +79,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error("❌ Global Server Error:", err.message);
 
-  res.status(err.status || 500).json({
+  res.status(500).json({
     success: false,
     message: err.message || "Internal Server Error",
   });

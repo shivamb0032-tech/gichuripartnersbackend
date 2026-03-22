@@ -4,6 +4,10 @@ const generateFormEmailTemplate = require("../utils/emailTemplate");
 
 const submitConsultForm = async (req, res) => {
   try {
+    console.log("📩 Consult req.body:", req.body);
+    console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
+    console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
+
     const { name, email, phone, services } = req.body;
 
     if (!name || !email || !phone || !services) {
@@ -13,10 +17,6 @@ const submitConsultForm = async (req, res) => {
       });
     }
 
-    console.log("📩 Consult form request received");
-    console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
-    console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
-
     const savedConsult = await ConsultForm.create({
       name,
       email,
@@ -24,6 +24,7 @@ const submitConsultForm = async (req, res) => {
       services,
     });
 
+<<<<<<< HEAD
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -31,6 +32,9 @@ const submitConsultForm = async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
     });
+=======
+    console.log("✅ Consult saved in DB:", savedConsult._id);
+>>>>>>> 085d29f (nodemailer)
 
     const html = generateFormEmailTemplate({
       formType: "Consult Form Submission",
@@ -43,12 +47,16 @@ const submitConsultForm = async (req, res) => {
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    await sendEmail({
+    console.log("✅ Email template generated");
+
+    const mailInfo = await sendEmail({
       to: process.env.EMAIL_USER,
       subject: `New Consult Inquiry | ${name}`,
       replyTo: email,
       html,
     });
+
+    console.log("✅ Mail sent:", mailInfo.response);
 
     return res.status(201).json({
       success: true,
@@ -56,7 +64,7 @@ const submitConsultForm = async (req, res) => {
       data: savedConsult,
     });
   } catch (error) {
-    console.error("❌ Consult Form Error:", error);
+    console.error("❌ Consult Form Error Full:", error);
 
     return res.status(500).json({
       success: false,
