@@ -1,8 +1,13 @@
 const Contact = require("../models/Contact");
 const sendEmail = require("../utils/sendEmail");
+const generateFormEmailTemplate = require("../utils/emailTemplate");
 
 const submitContactForm = async (req, res) => {
   try {
+    console.log("📩 Contact req.body:", req.body);
+    console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
+    console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
+
     const { name, email, phone, services, companyName } = req.body;
 
     if (!name || !email || !phone || !services || !companyName) {
@@ -20,21 +25,30 @@ const submitContactForm = async (req, res) => {
       companyName,
     });
 
-    await sendEmail({
-      to: process.env.EMAIL_USER,
-      subject: `New Contact Form Message | ${name}`,
-      replyTo: email,
-      html: `
-        <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.7; color: #222;">
-          <h2 style="margin-bottom: 16px;">New Contact Message</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Phone:</strong> ${phone}</p>
-          <p><strong>Service:</strong> ${services}</p>
-          <p><strong>Company Name:</strong> ${companyName}</p>
-        </div>
-      `,
+    console.log("✅ Contact saved in DB:", savedMessage._id);
+
+    const html = generateFormEmailTemplate({
+      formType: "Contact Form Submission",
+      name,
+      email,
+      phone,
+      services,
+      companyName,
+      brandName: "Gichuri Partners",
+      logoUrl:
+        "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
+
+    console.log("✅ Email template generated");
+
+    const mailInfo = await sendEmail({
+      to: process.env.EMAIL_USER,
+      subject: `New Contact Inquiry | ${name}`,
+      replyTo: email,
+      html,
+    });
+
+    console.log("✅ Mail sent:", mailInfo.response);
 
     return res.status(201).json({
       success: true,
@@ -42,7 +56,7 @@ const submitContactForm = async (req, res) => {
       data: savedMessage,
     });
   } catch (error) {
-    console.error("❌ Contact form error:", error);
+    console.error("❌ Contact Form Error Full:", error);
 
     return res.status(500).json({
       success: false,
