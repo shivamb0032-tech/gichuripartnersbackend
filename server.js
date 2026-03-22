@@ -20,17 +20,17 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+        return callback(null, true);
       }
+      return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
 
-app.options("*", cors());
+// ❌ ye line mat lagana
+// app.options("*", cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -62,7 +62,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error("❌ Global Server Error:", err.message);
 
-  res.status(500).json({
+  res.status(err.status || 500).json({
     success: false,
     message: err.message || "Internal Server Error",
   });
