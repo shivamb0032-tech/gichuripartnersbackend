@@ -13,8 +13,8 @@ const sendEmail = async ({ to, subject, html, replyTo }) => {
     console.log("✅ Mail sent:", info.response);
     return info;
   } catch (error) {
-    console.error("❌ Email send error:", error.message);
-    throw new Error("Email sending failed");
+    console.error("❌ Email send error:", error);
+    throw error;
   }
 };
 

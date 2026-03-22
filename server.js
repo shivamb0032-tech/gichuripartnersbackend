@@ -11,27 +11,36 @@ dotenv.config();
 
 const app = express();
 
-const corsOptions = {
-  origin: [
-    "http://localhost:3000",
-    "https://gichuripartners-ten.vercel.app",
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
-};
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://gichuripartners-ten.vercel.app",
+];
 
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
+
+app.options("*", cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Debug env logs
 console.log("🌍 NODE_ENV:", process.env.NODE_ENV);
 console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
 console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
 console.log("🛢️ MONGO_URI exists:", !!process.env.MONGO_URI);
 
-// Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
 app.use("/api/contact", require("./routes/contactRoutes"));
@@ -43,7 +52,6 @@ app.get("/", (req, res) => {
   res.status(200).send("API running...");
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -51,11 +59,10 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
-  console.error("❌ Global Server Error:", err);
+  console.error("❌ Global Server Error:", err.message);
 
-  res.status(err.status || 500).json({
+  res.status(500).json({
     success: false,
     message: err.message || "Internal Server Error",
   });
