@@ -1,5 +1,5 @@
 const ConsultForm = require("../models/ConsultForm");
-const nodemailer = require("nodemailer");
+const sendEmail = require("../utils/sendEmail");
 const generateFormEmailTemplate = require("../utils/emailTemplate");
 
 const submitConsultForm = async (req, res) => {
@@ -12,6 +12,10 @@ const submitConsultForm = async (req, res) => {
         message: "Name, email, phone and services are required",
       });
     }
+
+    console.log("📩 Consult form request received");
+    console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
+    console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
 
     const savedConsult = await ConsultForm.create({
       name,
@@ -31,31 +35,12 @@ const submitConsultForm = async (req, res) => {
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    // ✅ MAIL TRY-CATCH (IMPORTANT)
-    try {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
-
-      await transporter.sendMail({
-        from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_USER,
-        replyTo: email,
-        subject: `New Consult Inquiry | ${name}`,
-        html,
-      });
-    } catch (mailError) {
-      console.error("Consult Mail Error:", mailError);
-    }
+    await sendEmail({
+      to: process.env.EMAIL_USER,
+      subject: `New Consult Inquiry | ${name}`,
+      replyTo: email,
+      html,
+    });
 
     return res.status(201).json({
       success: true,
@@ -63,7 +48,7 @@ const submitConsultForm = async (req, res) => {
       data: savedConsult,
     });
   } catch (error) {
-    console.error("Consult Form Error:", error);
+    console.error("❌ Consult Form Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -82,7 +67,7 @@ const getAllConsultForms = async (req, res) => {
       consults,
     });
   } catch (error) {
-    console.error("Get consult error:", error);
+    console.error("❌ Get consult error:", error);
 
     return res.status(500).json({
       success: false,
@@ -109,7 +94,7 @@ const deleteConsultForm = async (req, res) => {
       message: "Consult form deleted successfully",
     });
   } catch (error) {
-    console.error("Delete consult error:", error);
+    console.error("❌ Delete consult error:", error);
 
     return res.status(500).json({
       success: false,
