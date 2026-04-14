@@ -24,17 +24,7 @@ const submitConsultForm = async (req, res) => {
       services,
     });
 
-<<<<<<< HEAD
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-=======
     console.log("✅ Consult saved in DB:", savedConsult._id);
->>>>>>> 085d29f (nodemailer)
 
     const html = generateFormEmailTemplate({
       formType: "Consult Form Submission",

@@ -13,6 +13,7 @@ const allowedOrigins = [
   "https://gichuripartners-ten.vercel.app",
 ];
 
+// 🔥 CORS FIXED (safe for Express 5)
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -26,42 +27,35 @@ app.use(
   })
 );
 
-<<<<<<< HEAD
-// 🔥 IMPORTANT (add this)
-app.options("*", cors());
+// 🔥 REMOVE app.options("*") (causes crash in Express 5)
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-=======
+// Middlewares (cleaned - no duplicates)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Logs
 console.log("🌍 NODE_ENV:", process.env.NODE_ENV);
 console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
 console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
 console.log("🛢️ MONGO_URI exists:", !!process.env.MONGO_URI);
 
-// ✅ Routes
+// Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
-
-// ✅ NEW MEDIA ROUTE (ADD THIS)
 app.use("/api/newmedia", require("./routes/newsRoutes"));
-
-// Contact form
 app.use("/api/contact", require("./routes/contactRoutes"));
-
-// Consult form
 app.use("/api/consult", require("./routes/consultRoutes"));
 
+// Static files
 app.use("/uploads", express.static("public/uploads"));
 
+// Health check
 app.get("/", (req, res) => {
   res.status(200).send("API running...");
 });
 
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -69,6 +63,7 @@ app.use((req, res) => {
   });
 });
 
+// Global error handler
 app.use((err, req, res, next) => {
   console.error("❌ Global Server Error:", err.message);
 
@@ -95,4 +90,3 @@ const startServer = async () => {
 };
 
 startServer();
->>>>>>> 6ea7e0c (news and media backend)
