@@ -1,6 +1,5 @@
 const Contact = require("../models/Contact");
-const nodemailer = require("nodemailer");
-const generateFormEmailTemplate = require("../utils/emailTemplate");
+const sendEmail = require("../utils/sendEmail");
 
 const submitContactForm = async (req, res) => {
   try {
@@ -9,7 +8,7 @@ const submitContactForm = async (req, res) => {
     if (!name || !email || !phone || !services || !companyName) {
       return res.status(400).json({
         success: false,
-        message: "Name, email, phone, services and company name are required",
+        message: "Name, email, phone, service and company name are required",
       });
     }
 
@@ -21,42 +20,33 @@ const submitContactForm = async (req, res) => {
       companyName,
     });
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const html = generateFormEmailTemplate({
-      formType: "Contact Form Submission",
-      name,
-      email,
-      phone,
-      services,
-      companyName,
-      brandName: "Gichuri Partners",
-      logoUrl:
-        "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    await sendEmail({
       to: process.env.EMAIL_USER,
-      subject: "New Contact Form Message",
-      html,
+      subject: `New Contact Form Message | ${name}`,
+      replyTo: email,
+      html: `
+        <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.7; color: #222;">
+          <h2 style="margin-bottom: 16px;">New Contact Message</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Service:</strong> ${services}</p>
+          <p><strong>Company Name:</strong> ${companyName}</p>
+        </div>
+      `,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Form submitted successfully",
       data: savedMessage,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("❌ Contact form error:", error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message || "Something went wrong",
+      message: error.message || "Something went wrong while submitting the form",
     });
   }
 };
@@ -71,9 +61,11 @@ const getAllContactForms = async (req, res) => {
       contacts,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("❌ Get contacts error:", error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch contacts",
+      message: error.message || "Failed to fetch contact forms",
     });
   }
 };
@@ -96,7 +88,9 @@ const deleteContactForm = async (req, res) => {
       message: "Contact form deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("❌ Delete contact error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to delete contact form",
     });

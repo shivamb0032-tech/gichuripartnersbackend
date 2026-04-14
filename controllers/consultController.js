@@ -1,5 +1,5 @@
 const ConsultForm = require("../models/ConsultForm");
-const nodemailer = require("nodemailer");
+const sendEmail = require("../utils/sendEmail");
 const generateFormEmailTemplate = require("../utils/emailTemplate");
 
 const submitConsultForm = async (req, res) => {
@@ -12,6 +12,10 @@ const submitConsultForm = async (req, res) => {
         message: "Name, email, phone and services are required",
       });
     }
+
+    console.log("📩 Consult form request received");
+    console.log("📧 EMAIL_USER exists:", !!process.env.EMAIL_USER);
+    console.log("🔑 EMAIL_PASS exists:", !!process.env.EMAIL_PASS);
 
     const savedConsult = await ConsultForm.create({
       name,
@@ -39,21 +43,22 @@ const submitConsultForm = async (req, res) => {
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
 
-    await transporter.sendMail({
-      from: `"Gichuri Partners" <${process.env.EMAIL_USER}>`,
+    await sendEmail({
       to: process.env.EMAIL_USER,
       subject: `New Consult Inquiry | ${name}`,
+      replyTo: email,
       html,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Consult form submitted successfully",
       data: savedConsult,
     });
   } catch (error) {
-    console.error("Consult Form Error:", error);
-    res.status(500).json({
+    console.error("❌ Consult Form Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Something went wrong",
     });
@@ -70,7 +75,9 @@ const getAllConsultForms = async (req, res) => {
       consults,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("❌ Get consult error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to fetch consult forms",
     });
@@ -95,7 +102,9 @@ const deleteConsultForm = async (req, res) => {
       message: "Consult form deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("❌ Delete consult error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to delete consult form",
     });
