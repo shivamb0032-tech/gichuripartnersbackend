@@ -32,7 +32,7 @@ const submitConsultForm = async (req, res) => {
       email,
       phone,
       services,
-      brandName: "Gichuri Partners",
+      brandName: "Gichuri Partners", 
       logoUrl:
         "https://gichuripartners-ten.vercel.app/assets/logos/Gichuri-Partners-logo-version-3.png",
     });
@@ -67,7 +67,7 @@ const getAllConsultForms = async (req, res) => {
   try {
     const consults = await ConsultForm.find().sort({ createdAt: -1 });
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       count: consults.length,
       consults,
@@ -95,7 +95,7 @@ const deleteConsultForm = async (req, res) => {
 
     await consult.deleteOne();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Consult form deleted successfully",
     });

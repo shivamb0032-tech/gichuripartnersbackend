@@ -69,7 +69,7 @@ const getAllContactForms = async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       count: contacts.length,
       contacts,
@@ -97,7 +97,7 @@ const deleteContactForm = async (req, res) => {
 
     await contact.deleteOne();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Contact form deleted successfully",
     });

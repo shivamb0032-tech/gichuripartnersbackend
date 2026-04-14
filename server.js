@@ -1,6 +1,3 @@
-const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first");
-
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -43,11 +40,14 @@ console.log("🛢️ MONGO_URI exists:", !!process.env.MONGO_URI);
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/blogs", require("./routes/blogRoutes"));
+app.use("/api/newmedia", require("./routes/newsRoutes"));
 app.use("/api/contact", require("./routes/contactRoutes"));
 app.use("/api/consult", require("./routes/consultRoutes"));
 
+// Static files
 app.use("/uploads", express.static("public/uploads"));
 
+// Health check
 app.get("/", (req, res) => {
   res.status(200).send("API running...");
 });
